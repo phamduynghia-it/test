@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = (
-        "postgresql+asyncpg://fabbi:fabbi_secret@localhost:5432/postgres"
+        "postgresql+asyncpg://fabbi:fabbi_secret@localhost:5434/postgres"
     )
     DB_ECHO: bool = True
 
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 
 settings = Settings()
