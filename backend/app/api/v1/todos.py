@@ -11,6 +11,7 @@ from app.core.redis import RedisClient
 from app.db.session import get_db
 from app.models.user import User
 from app.models.tag import Tag
+from app.models.todo import Todo
 from app.models.todo_tag import TodoTag
 from app.schemas.todo import TodoCreate, TodoListResponse, TodoResponse, TodoUpdate, TodoBulkUpdate, TagAttach
 from app.services.todo_service import (

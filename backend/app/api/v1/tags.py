@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy import select, exc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -77,13 +77,13 @@ async def update_tag(
     return tag
 
 
-@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def delete_tag(
     *,
     db: AsyncSession = Depends(get_db),
     tag_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-) -> Any:
+) -> None:
     """Delete a tag."""
     stmt = select(Tag).where(Tag.id == tag_id, Tag.user_id == current_user.id)
     result = await db.execute(stmt)
