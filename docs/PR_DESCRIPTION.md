@@ -47,3 +47,36 @@
 - **Severity**: Medium
 - **Reason**: The `docs/` directory is explicitly ignored, which prevents tracking necessary architectural or specification documents (like `TODO_SHARING_SPEC.md` required in Tier 3).
 - **Fix Proposal**: Remove the `docs/` entry from `.gitignore`.
+
+# Tier 2: Testing Strategy & Implementation
+- **Backend Tests**: Added 12 Pytest cases covering JWT expiration, data isolation, and boolean toggle logic in `backend/tests/`.
+- **E2E Tests**: Implemented Playwright testing in `frontend/e2e/todos.spec.ts` for full user journey and cross-user data isolation. Run via `npm run test:e2e`.
+- **Manual Test Plan**: Created `docs/TEST_PLAN.md` based on standard template.
+
+# Tier 3: Advanced Engineering Skills
+
+## Task 3A: Technical Specification Writing
+- Created `docs/TODO_SHARING_SPEC.md` detailing the architecture, database schema, API contracts, and security considerations for the upcoming Todo Sharing feature.
+
+## Task 3B: Docker & Infrastructure Optimization
+- **Healthchecks**: Added `pg_isready` and `redis-cli ping` healthchecks to Postgres and Redis.
+- **Dependencies**: Configured the `backend` service to wait for `condition: service_healthy` on DBs to prevent startup crashes.
+- **Dockerignore**: Added `.dockerignore` files for both frontend and backend to exclude `node_modules`, `venv`, `.env`, saving hundreds of MBs in context size and preventing secret leakage.
+- **Multi-stage Build**: Refactored `backend/Dockerfile` to use a multi-stage build pattern, discarding the `gcc` build toolchain to keep the final image slim and secure.
+- **Security**: Secured the Redis instance by requiring a password (`--requirepass`) and updated the `REDIS_URL` accordingly.
+
+## Task 3C: Database Performance & Indexing Strategy
+
+- **Benchmarking & Index Implementation**: Seeded 1,000,000 records to measure real-world performance. Added composite indexes (`ix_todos_user_completed_created` and `ix_todos_user_created`) via Alembic to optimize user-specific queries.
+
+**Performance Comparison Table (1,000,000 records):**
+
+| Query Type | Before Index (Execution Time) | After Index (Execution Time) | Performance Gain | Scan Type (After) |
+| :--- | :--- | :--- | :--- | :--- |
+| **List & Sort** (`SELECT * ... ORDER BY created_at LIMIT 20`) | ~64.02 ms | ~12.60 ms | **~5x faster** | `Index Scan` |
+| **Filter & Count** (`SELECT COUNT(*) ... WHERE completed=true`) | ~55.88 ms | ~28.19 ms | **~2x faster** | `Index Only Scan` |
+
+**Tradeoffs (Sự đánh đổi khi sử dụng Index):**
+- **Storage Overhead (Tốn dung lượng):** Việc tạo thêm các B-Tree composite index cho bảng `todos` sẽ tiêu tốn thêm dung lượng lưu trữ trên đĩa cứng. Ngoài ra, Postgres cũng sẽ cần nhiều memory (RAM) hơn để cache các block của index này nhằm duy trì tốc độ cao.
+- **Write Penalty (Giảm tốc độ ghi):** Bất cứ khi nào có một thao tác thêm mới (INSERT), sửa đổi các trường nằm trong index (UPDATE), hoặc xóa (DELETE) trên bảng `todos`, database không chỉ phải cập nhật bảng chính mà còn phải sắp xếp và cập nhật lại cấu trúc cây của các Index này. Điều này làm tăng chi phí và thời gian thực thi cho các thao tác Write-heavy.
+- **Kết luận:** Trong một ứng dụng Todo thông thường, tần suất người dùng tải trang, lọc danh sách, sắp xếp (Read-heavy) sẽ cao hơn rất nhiều so với tần suất họ tạo hoặc sửa todo (Write). Do đó, sự đánh đổi hiệu năng Ghi để lấy tốc độ Đọc (tăng tốc độ 2-5 lần) là hoàn toàn hợp lý và mang lại lợi ích lớn về User Experience.
