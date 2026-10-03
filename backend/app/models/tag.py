@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import DateTime, ForeignKey, String, func, UniqueConstraint, Index
+from sqlalchemy import DateTime, ForeignKey, String, func, UniqueConstraint, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,7 +19,7 @@ class Tag(Base):
     __tablename__ = "tags"
 
     __table_args__ = (
-        UniqueConstraint("user_id", func.lower("name"), name="uq_tag_user_id_name_lower"),
+        Index("uq_tag_user_id_name_lower", "user_id", text("lower(name)"), unique=True),
         Index("ix_tags_user_id", "user_id"),
     )
 
