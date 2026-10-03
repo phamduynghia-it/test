@@ -80,3 +80,24 @@
 - **Storage Overhead (Tốn dung lượng):** Việc tạo thêm các B-Tree composite index cho bảng `todos` sẽ tiêu tốn thêm dung lượng lưu trữ trên đĩa cứng. Ngoài ra, Postgres cũng sẽ cần nhiều memory (RAM) hơn để cache các block của index này nhằm duy trì tốc độ cao.
 - **Write Penalty (Giảm tốc độ ghi):** Bất cứ khi nào có một thao tác thêm mới (INSERT), sửa đổi các trường nằm trong index (UPDATE), hoặc xóa (DELETE) trên bảng `todos`, database không chỉ phải cập nhật bảng chính mà còn phải sắp xếp và cập nhật lại cấu trúc cây của các Index này. Điều này làm tăng chi phí và thời gian thực thi cho các thao tác Write-heavy.
 - **Kết luận:** Trong một ứng dụng Todo thông thường, tần suất người dùng tải trang, lọc danh sách, sắp xếp (Read-heavy) sẽ cao hơn rất nhiều so với tần suất họ tạo hoặc sửa todo (Write). Do đó, sự đánh đổi hiệu năng Ghi để lấy tốc độ Đọc (tăng tốc độ 2-5 lần) là hoàn toàn hợp lý và mang lại lợi ích lớn về User Experience.
+
+# Tier 4: Optional Extension (Todo Tags, Filtering & Bulk Actions)
+
+Hoàn thành xuất sắc toàn bộ Full-stack tính năng mở rộng:
+
+## 1. Database & Models
+- Tạo mới Model `Tag` và bảng trung gian `TodoTag` hỗ trợ quan hệ Many-to-Many giữa Todo và Tag.
+- Thêm các File Alembic Migration tạo bảng (`192178a87c5c_create_tags_tables.py`).
+- Cấu hình Unique Constraints cho tên tag và Index tối ưu truy vấn theo `user_id`.
+
+## 2. Backend API
+- Triển khai CRUD API đầy đủ cho Tags (`GET /tags`, `POST /tags`, v.v.).
+- Tích hợp logic gắn/gỡ Tag vào Todo API (`POST /todos/{id}/tags`).
+- Cập nhật API lấy danh sách Todo (`GET /todos`) hỗ trợ Query Parameters để lọc (Filtering) và thay đổi key cache Redis tương ứng.
+- Viết API `PATCH /todos/bulk-status` hỗ trợ cập nhật trạng thái hàng loạt trong một Database Transaction.
+
+## 3. Frontend & UI
+- Triển khai giao diện quản lý Tag (`TagManagementModal`) và thanh lọc Todo (`TodoFilterBar`).
+- Thêm Toolbar hỗ trợ thao tác hàng loạt (`BulkActionsToolbar`).
+- Tích hợp thành công `@tanstack/react-query` với cơ chế Invalidate Cache thông minh ngay sau khi mutations (Create, Delete, Tagging, Bulk Update).
+- Clear toàn bộ cache dữ liệu nhạy cảm khi Logout.
