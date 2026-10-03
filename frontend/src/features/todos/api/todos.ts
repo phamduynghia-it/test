@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
-import { Tag } from "./tags";
+import type { Tag } from "./tags";
 
 export interface Todo {
   id: string;
